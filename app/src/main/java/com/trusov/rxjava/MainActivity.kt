@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
+import android.widget.Toast
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.*
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -16,28 +17,15 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val button = findViewById<Button>(R.id.button)
-            button.setOnClickListener {
+        button.setOnClickListener {
             Log.e(TAG, "click click")
         }
 
-        val disposable = dataSource()
-            .subscribeOn(Schedulers.newThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({
-                button.text = "click-$it"
-                Log.e(TAG, "next int $it")
-            }, {
-                Log.e(TAG, "Throwable: ${it.localizedMessage}")
-            })
+        Observable.just("Hello RxJava")
+            .map { "$it, my name is" }
+            .map { "$it Gleb" }
+            .subscribe { Toast.makeText(application, it, Toast.LENGTH_SHORT).show() }
     }
 
-    private fun dataSource(): Flowable<Int> {
-        return Flowable.create ({ subscriber ->
-            for (i in 0..500000) {
-                subscriber.onNext(i)
-            }
-            subscriber.onComplete()
-        }, BackpressureStrategy.DROP)
-    }
 
 }
