@@ -4,18 +4,24 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.widget.Button
+import android.widget.EditText
 import android.widget.Toast
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.*
+import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 
 class MainActivity : AppCompatActivity() {
     private val TAG = "MainActivityTag"
 
+    private val compositeDisposable = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,23 +32,34 @@ class MainActivity : AppCompatActivity() {
             Log.e(TAG, "click click")
         }
 
-        val disposable: Disposable = Observable.create<Int> { subscriber ->
-            listOf(1, 2, 3, 4, 5).forEach {
-                Thread.sleep(1000)
-                subscriber.onNext(it)
-            }
+        val editText = findViewById<EditText>(R.id.et_test)
+        val dataSource = Observable.create<CharSequence> { subscriber ->
+            editText.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+                }
+                override fun onTextChanged(char: CharSequence?, p1: Int, p2: Int, p3: Int) {
+                    subscriber.onNext(char)
+                }
+                override fun afterTextChanged(p0: Editable?) {
+                }
+            })
         }
+
+        val disposable: Disposable = dataSource
+            .debounce(500, TimeUnit.MILLISECONDS)
             .subscribeOn(Schedulers.newThread())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe {
-                Log.d(TAG, "value is $it")
+                Toast.makeText(application, "Search: $it", Toast.LENGTH_SHORT).show()
+                Log.d(TAG, "$it") // find
             }
 
-        Handler(Looper.getMainLooper()).postDelayed({
-            disposable.dispose()
-            Log.d(TAG, "Disposed")
-        }, 3000)
+
+        compositeDisposable.add(disposable)
     }
 
-
+    override fun onDestroy() {
+        super.onDestroy()
+        compositeDisposable.clear()
+    }
 }
