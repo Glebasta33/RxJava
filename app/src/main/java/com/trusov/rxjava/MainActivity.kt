@@ -10,6 +10,8 @@ import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import com.trusov.rxjava.data.ApiFactory
+import com.trusov.rxjava.data.TaskDto
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.*
 import io.reactivex.rxjava3.disposables.CompositeDisposable
@@ -27,35 +29,47 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val disposable = ApiFactory.apiService.getListOfTasks()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe ({ tasks ->
+                tasks.forEach { task ->
+                    Log.d(TAG, task.toString())
+                }
+            }, {
+                Log.d(TAG, "onError: ${it.localizedMessage}")
+            }, {
+                Log.d(TAG, "onComplete")
+            })
+
         val button = findViewById<Button>(R.id.button)
         button.setOnClickListener {
             Log.e(TAG, "click click")
         }
 
-        val editText = findViewById<EditText>(R.id.et_test)
-        val dataSource = Observable.create<CharSequence> { subscriber ->
-            editText.addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                }
-                override fun onTextChanged(char: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                    subscriber.onNext(char)
-                }
-                override fun afterTextChanged(p0: Editable?) {
-                }
-            })
-        }
-
-        val disposable: Disposable = dataSource
-            .debounce(500, TimeUnit.MILLISECONDS)
-            .subscribeOn(Schedulers.newThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe {
-                Toast.makeText(application, "Search: $it", Toast.LENGTH_SHORT).show()
-                Log.d(TAG, "$it") // find
-            }
-
-
-        compositeDisposable.add(disposable)
+//        val editText = findViewById<EditText>(R.id.et_test)
+//        val dataSource = Observable.create<CharSequence> { subscriber ->
+//            editText.addTextChangedListener(object : TextWatcher {
+//                override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+//                }
+//                override fun onTextChanged(char: CharSequence?, p1: Int, p2: Int, p3: Int) {
+//                    subscriber.onNext(char)
+//                }
+//                override fun afterTextChanged(p0: Editable?) {
+//                }
+//            })
+//        }
+//
+//        val disposable: Disposable = dataSource
+//            .debounce(500, TimeUnit.MILLISECONDS)
+//            .subscribeOn(Schedulers.newThread())
+//            .observeOn(AndroidSchedulers.mainThread())
+//            .subscribe {
+//                Toast.makeText(application, "Search: $it", Toast.LENGTH_SHORT).show()
+//                Log.d(TAG, "$it") // find
+//            }
+//
+//        compositeDisposable.add(disposable)
     }
 
     override fun onDestroy() {
