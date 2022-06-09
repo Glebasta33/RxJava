@@ -40,8 +40,7 @@ class MainActivity : AppCompatActivity() {
         val names = Observable.just("Ivan", "Gleb", "Egor", "Simon", "Richard", "Alex", "Andrew")
         val surnames = Observable.just("Frolov", "Sokolov", "Larkin", "Ivanov", "Demidov", "Konovalov", "Zeldin")
 
-        names.zipWith(surnames) { name, surname -> "$name $surname" }
-            .map { it.uppercase() }
+        names.mergeWith(surnames)
             .subscribe{
                 Log.d(TAG, "Result: $it")
             }
