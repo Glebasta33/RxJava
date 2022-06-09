@@ -17,6 +17,7 @@ import io.reactivex.rxjava3.core.*
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.functions.BiFunction
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -31,7 +32,29 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val disposable = ApiFactory.apiService.getListOfTasks()
+        val button = findViewById<Button>(R.id.button)
+        button.setOnClickListener {
+            loadTasks()
+        }
+
+        val names = Observable.just("Ivan", "Gleb", "Egor", "Simon", "Richard", "Alex", "Andrew")
+        val surnames = Observable.just("Frolov", "Sokolov", "Larkin", "Ivanov", "Demidov", "Konovalov", "Zeldin")
+
+        names.zipWith(surnames) { name, surname -> "$name $surname" }
+            .map { it.uppercase() }
+            .subscribe{
+                Log.d(TAG, "Result: $it")
+            }
+
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        compositeDisposable.clear()
+    }
+
+    private fun loadTasks() {
+        val disposableTasks = ApiFactory.apiService.getListOfTasks()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .flatMap { Observable.fromIterable(it) }
@@ -52,39 +75,7 @@ class MainActivity : AppCompatActivity() {
             }, {
                 Log.d(TAG, "onComplete")
             })
-
-        val button = findViewById<Button>(R.id.button)
-        button.setOnClickListener {
-            Log.e(TAG, "click click")
-        }
-
-//        val editText = findViewById<EditText>(R.id.et_test)
-//        val dataSource = Observable.create<CharSequence> { subscriber ->
-//            editText.addTextChangedListener(object : TextWatcher {
-//                override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
-//                }
-//                override fun onTextChanged(char: CharSequence?, p1: Int, p2: Int, p3: Int) {
-//                    subscriber.onNext(char)
-//                }
-//                override fun afterTextChanged(p0: Editable?) {
-//                }
-//            })
-//        }
-//
-//        val disposable: Disposable = dataSource
-//            .debounce(500, TimeUnit.MILLISECONDS)
-//            .subscribeOn(Schedulers.newThread())
-//            .observeOn(AndroidSchedulers.mainThread())
-//            .subscribe {
-//                Toast.makeText(application, "Search: $it", Toast.LENGTH_SHORT).show()
-//                Log.d(TAG, "$it") // find
-//            }
-//
-//        compositeDisposable.add(disposable)
+        compositeDisposable.add(disposableTasks)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        compositeDisposable.clear()
-    }
 }
