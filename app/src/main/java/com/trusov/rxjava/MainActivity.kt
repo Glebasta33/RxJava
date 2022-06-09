@@ -14,9 +14,11 @@ import com.trusov.rxjava.data.ApiFactory
 import com.trusov.rxjava.data.TaskDto
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.*
+import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
+import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
@@ -32,10 +34,19 @@ class MainActivity : AppCompatActivity() {
         val disposable = ApiFactory.apiService.getListOfTasks()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe ({ tasks ->
-                tasks.forEach { task ->
-                    Log.d(TAG, task.toString())
-                }
+            .flatMap { Observable.fromIterable(it) }
+            .filter { !it.completed }
+            .filter { it.id % 2 == 0 }
+            .map {
+                TaskDto(
+                    completed = it.completed,
+                    id = it.id,
+                    title = it.title.uppercase(),
+                    userId = it.userId
+                )
+            }
+            .subscribe({ task ->
+                Log.d(TAG, task.toString())
             }, {
                 Log.d(TAG, "onError: ${it.localizedMessage}")
             }, {
